@@ -3,8 +3,6 @@ name: Build GlyphOS ISO
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
     tags:
       - "v*"
 
@@ -15,6 +13,7 @@ jobs:
   build-iso:
     name: Build x86_64 ISO
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
