@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! id glyph >/dev/null 2>&1; then
+    useradd --create-home --user-group --groups wheel,audio,video,storage,input glyph
+fi
+
+passwd --delete glyph >/dev/null 2>&1 || true
+
+install -d -m 0700 -o glyph -g glyph /home/glyph/.config
+install -d -m 0700 -o glyph -g glyph /home/glyph/.local
+
+cat > /home/glyph/.config/glyphos-session <<'EOF'
+GLYPHOS_SESSION=1
+GLYPHOS_VERSION=0.1.0-dev
+EOF
+
+chown glyph:glyph /home/glyph/.config/glyphos-session
