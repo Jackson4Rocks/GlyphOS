@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          pacman -Syu --noconfirm archiso git
+          pacman -Syu --noconfirm archiso git grub syslinux
 
       - name: Checkout
         uses: actions/checkout@v4
