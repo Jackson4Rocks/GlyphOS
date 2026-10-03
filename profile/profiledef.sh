@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# ArchISO sources this file and consumes these variables externally.
+# shellcheck disable=SC2034
+
 iso_name="glyphos"
 iso_label="GLYPH_$(date +%Y%m)"
 iso_publisher="GlyphOS Project <https://github.com/Jackson4Rocks/GlyphOS>"
