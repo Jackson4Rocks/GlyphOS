@@ -19,4 +19,4 @@ jobs:
       - name: Validate profile
         run: |
           shellcheck scripts/validate-profile.sh profile/profiledef.sh profile/airootfs/usr/local/libexec/glyphos-live-user
-          ./scripts/validate-profile.sh
+          bash scripts/validate-profile.sh
