@@ -15,23 +15,20 @@ jobs:
   build-iso:
     name: Build x86_64 ISO
     runs-on: ubuntu-latest
-    container: archlinux:latest
-    steps:
-      - name: Install build dependencies
-        run: |
-          pacman -Syu --noconfirm archiso git grub syslinux
 
+    steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate profile
+      - name: Build ISO in privileged Arch container
         run: |
-          bash scripts/validate-profile.sh
-
-      - name: Build ISO
-        run: |
-          mkdir -p work out
-          mkarchiso -v -w work -o out profile
+          docker run --rm --privileged             -v "${GITHUB_WORKSPACE}:/workspace"             -w /workspace             archlinux:latest             bash -lc '
+              set -euo pipefail
+              pacman -Syu --noconfirm archiso git grub syslinux
+              bash scripts/validate-profile.sh
+              mkdir -p work out
+              mkarchiso -v -w work -o out profile
+            '
 
       - name: Show ISO
         run: |
