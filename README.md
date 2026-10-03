@@ -1,14 +1,20 @@
+<div align="center">
+
+<img src="branding/glyphos-banner.svg" alt="GlyphOS" width="100%">
+
 # GlyphOS
 
-> **A Nothing-inspired Linux desktop, built on KDE Plasma.**
+**A Nothing-inspired Linux desktop, built on KDE Plasma.**
 
-GlyphOS is an independent Arch-based Linux desktop project focused on a minimal, expressive, monochrome-first experience. The goal is to heavily customize KDE Plasma into a cohesive desktop workspace rather than building a desktop environment from scratch.
+Minimal. Expressive. Linux.
+
+</div>
 
 ## Status
 
-**Phase: Foundation**
+**Phase: Foundation → Desktop bring-up**
 
-The repository currently contains the first ArchISO profile, live Plasma setup, initial GlyphOS visual system, and build/validation tooling. The Plasma shell itself is still close to stock KDE; deeper workspace changes come next.
+GlyphOS is an independent Arch-based Linux desktop project focused on a minimal, expressive, monochrome-first experience. KDE Plasma is the desktop foundation; GlyphOS progressively replaces its presentation layer instead of implementing a desktop environment from scratch.
 
 ## Stack
 
@@ -20,16 +26,21 @@ The repository currently contains the first ArchISO profile, live Plasma setup, 
 - NetworkManager
 - ArchISO
 
-## Design direction
+## Visual identity
 
-GlyphOS takes inspiration from industrial consumer-tech interfaces: strong typography, deep black surfaces, restrained monochrome UI, geometric details, large expressive information blocks, and subtle motion.
+The GlyphOS design system uses AMOLED black, crisp monochrome typography, geometric indicators, dot-matrix motifs, thin technical lines, and large negative space.
 
-GlyphOS is **not an official Nothing product** and does not ship Nothing proprietary artwork, software, fonts, logos, or other protected assets.
+<img src="branding/glyphos-mark.svg" alt="GlyphOS mark" width="128">
+
+GlyphOS is an independent project and is **not an official Nothing product**. Nothing proprietary artwork, software, fonts, logos, or interface assets are not bundled with GlyphOS.
 
 ## Repository layout
 
 ```
 .
+├── branding/
+│   ├── glyphos-mark.svg
+│   └── glyphos-banner.svg
 ├── docs/
 ├── profile/
 ├── scripts/
@@ -42,11 +53,12 @@ GlyphOS is **not an official Nothing product** and does not ship Nothing proprie
 On an Arch Linux host:
 
 ```bash
-sudo pacman -S --needed archiso git
+sudo pacman -S --needed archiso git qemu-desktop edk2-ovmf
+make validate
 make build
 ```
 
-The ISO is written to `out/`.
+The generated ISO is written to `out/`.
 
 For a local QEMU test:
 
@@ -58,18 +70,25 @@ See [docs/BUILDING.md](docs/BUILDING.md) for the full workflow.
 
 ## Roadmap
 
-- [x] Establish project identity and architecture
+- [x] Establish project identity and branding
 - [x] Create the first ArchISO foundation
 - [x] Boot into a live KDE Plasma session
 - [x] Establish GlyphOS dark color system
-- [ ] Create the GlyphOS Plasma shell layout
-- [ ] Replace the stock panel/launcher experience
+- [x] Integrate GlyphOS mark and wallpaper into the live image
+- [ ] Build a first GlyphOS Plasma layout
+- [ ] Replace the stock panel and launcher experience
 - [ ] Add GlyphOS quick settings and notification surfaces
 - [ ] Create the GlyphOS lock screen and login experience
-- [ ] Build a first-party GlyphOS settings layer
+- [ ] Build first-party GlyphOS settings
 - [ ] Create a polished installer
 - [ ] Add hardware-aware defaults
 - [ ] Produce reproducible release ISOs
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Design language](docs/DESIGN.md)
+- [Building](docs/BUILDING.md)
 
 ## License
 
