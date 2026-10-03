@@ -1,0 +1,45 @@
+name: Build GlyphOS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-iso:
+    name: Build x86_64 ISO
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm archiso git
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate profile
+        run: |
+          bash scripts/validate-profile.sh
+
+      - name: Build ISO
+        run: |
+          mkdir -p work out
+          mkarchiso -v -w work -o out profile
+
+      - name: Show ISO
+        run: |
+          ls -lh out/*.iso
+          sha256sum out/*.iso
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glyphos-x86_64-iso
+          path: out/*.iso
+          if-no-files-found: error
+          retention-days: 14
