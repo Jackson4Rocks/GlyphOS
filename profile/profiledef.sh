@@ -14,7 +14,6 @@ pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
 
 bootmodes=('bios.syslinux'
-           'uefi.systemd-boot'
            'uefi.grub')
 
 airootfs_image_tool_options=(
