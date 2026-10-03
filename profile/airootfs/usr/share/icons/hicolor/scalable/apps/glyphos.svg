@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>GlyphOS mark</title>
+  <rect width="512" height="512" rx="48" fill="#000"/>
+  <g fill="#F5F5F3">
+    <circle cx="170" cy="160" r="14"/>
+    <circle cx="170" cy="204" r="14"/>
+    <circle cx="170" cy="248" r="14"/>
+    <circle cx="126" cy="292" r="14"/>
+    <circle cx="170" cy="292" r="14"/>
+    <circle cx="214" cy="292" r="14"/>
+    <circle cx="258" cy="292" r="14"/>
+    <circle cx="302" cy="292" r="14"/>
+    <circle cx="126" cy="336" r="14"/>
+    <circle cx="170" cy="336" r="14"/>
+    <circle cx="214" cy="336" r="14"/>
+    <circle cx="258" cy="336" r="14"/>
+    <circle cx="302" cy="336" r="14"/>
+    <circle cx="170" cy="380" r="14"/>
+    <circle cx="170" cy="424" r="14"/>
+    <circle cx="170" cy="468" r="14"/>
+    <circle cx="258" cy="424" r="14"/>
+    <circle cx="302" cy="424" r="14"/>
+    <circle cx="346" cy="424" r="14"/>
+    <circle cx="390" cy="424" r="14"/>
+    <circle cx="368" cy="314" r="48"/>
+  </g>
+  <rect x="88" y="248" width="6" height="118" fill="#F5F5F3"/>
+</svg>
