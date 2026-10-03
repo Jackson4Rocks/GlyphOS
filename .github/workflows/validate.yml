@@ -1,0 +1,22 @@
+name: Validate GlyphOS
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install validation tools
+        run: |
+          pacman -Sy --noconfirm git shellcheck
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate profile
+        run: |
+          shellcheck scripts/validate-profile.sh profile/profiledef.sh profile/airootfs/usr/local/libexec/glyphos-live-user
+          ./scripts/validate-profile.sh
