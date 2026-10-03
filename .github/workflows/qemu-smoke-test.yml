@@ -1,0 +1,64 @@
+name: QEMU Boot Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build GlyphOS ISO workflow run ID"
+        required: true
+        type: string
+  workflow_run:
+    workflows:
+      - Build GlyphOS ISO
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  smoke-test:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download GlyphOS ISO artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: glyphos-x86_64-iso
+          path: iso
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.run_id || github.event.workflow_run.id }}
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86
+
+      - name: Boot GlyphOS in QEMU
+        run: |
+          ISO="$(find iso -name '*.iso' -type f | head -n1)"
+          test -n "$ISO"
+          echo "Testing: $ISO"
+
+          set +e
+          timeout 90s qemu-system-x86_64             -enable-kvm             -M q35             -m 2048             -smp 2             -cdrom "$ISO"             -boot d             -display none             -monitor none             -serial null             -no-reboot             -snapshot
+
+          status=$?
+          set -e
+
+          # A timeout means QEMU stayed alive for the full smoke-test window.
+          if [ "$status" -eq 124 ]; then
+            echo "GlyphOS remained running in QEMU for 90 seconds."
+            exit 0
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            echo "QEMU exited cleanly."
+            exit 0
+          fi
+
+          echo "QEMU exited with status $status."
+          exit "$status"
