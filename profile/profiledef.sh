@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-
-# ArchISO sources this file and consumes these variables externally.
 # shellcheck disable=SC2034
 
 iso_name="glyphos"
-iso_label="GLYPH_$(date +%Y%m)"
+iso_label="GLYPH_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
 iso_publisher="GlyphOS Project <https://github.com/Jackson4Rocks/GlyphOS>"
 iso_application="GlyphOS Live Environment"
-iso_version="$(date +%Y.%m.%d)"
+iso_version="$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y.%m.%d)"
 
 install_dir="glyph"
 arch="x86_64"
 
-bootmodes=('bios.syslinux' 'uefi.grub' 'uefi.systemd-boot')
+pacman_conf="pacman.conf"
+airootfs_image_type="squashfs"
+
+bootmodes=('bios.syslinux'
+           'uefi.systemd-boot'
+           'uefi.grub')
 
 airootfs_image_tool_options=(
     '-comp' 'xz'
