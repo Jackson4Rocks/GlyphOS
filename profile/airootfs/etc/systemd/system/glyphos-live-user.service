@@ -1,0 +1,15 @@
+[Unit]
+Description=Create the GlyphOS live user
+DefaultDependencies=no
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=display-manager.service
+ConditionPathExists=!/run/glyphos-live-user-ready
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/glyphos-live-user
+ExecStartPost=/usr/bin/touch /run/glyphos-live-user-ready
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
