@@ -23,6 +23,9 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
     win.add_css_class("glyph-root");
     win.add_css_class("glass");
     win.add_css_class("dock");
+    // This GTK/gtk4-layer-shell combo no longer maps creation-time windows
+    // implicitly; dock is always visible, so present immediately.
+    win.present();
     let cfg_icon = st.config.read().unwrap().dock.icon_size as i32;
     let dock = DockBox::builder()
         .orientation(Orientation::Horizontal)

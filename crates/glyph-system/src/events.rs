@@ -2,6 +2,7 @@
 //! panel indicators remain truthful without needing DBus subscriptions yet.
 
 use crate::battery::BatteryState;
+use crate::bluetooth::BluetoothState;
 use crate::brightness::BrightnessState;
 use crate::network::NetworkState;
 use crate::pulse::AudioState;
@@ -13,6 +14,7 @@ pub struct SystemSnapshot {
     pub audio: AudioState,
     pub battery: BatteryState,
     pub brightness: BrightnessState,
+    pub bluetooth: BluetoothState,
 }
 
 impl SystemSnapshot {
@@ -23,6 +25,7 @@ impl SystemSnapshot {
             audio: crate::pulse::audio_state(),
             battery: crate::battery::battery_state(),
             brightness: crate::brightness::brightness_state(),
+            bluetooth: crate::bluetooth::bluetooth_state(),
         }
     }
 }

@@ -4,6 +4,7 @@ use crate::compositor;
 use crate::ui::widget_helpers::*;
 use gtk::prelude::*;
 use gtk::{glib, Box, Button, Label};
+use std::sync::Arc;
 
 /// Real workspace indicator row: one dot per existing workspace, active one
 /// highlighted. Reads from the cached compositor state (no main-thread IPC).
@@ -39,16 +40,18 @@ fn workspace_label(active: bool) -> String {
 }
 
 /// Honest system-stat cluster with 1-second refresh, driven by real adapters
-/// through the glyph-system cached snapshot.
-pub fn stats_cluster(root: &Box) {
+/// through the glyph-system cached snapshot. Each entry opens the Control
+/// Center on click (real destination, not decoration).
+pub fn stats_cluster(root: &Box, st: &Arc<crate::state::ShellState>) {
+    use crate::state::{Overlay, ShellSignal, ZAction};
     let net0 = Label::builder().css_classes(cls(&["dim","body"])).build();
     let audio0 = Label::builder().css_classes(cls(&["dim","body"])).build();
+    let bt0 = Label::builder().css_classes(cls(&["dim","body"])).build();
     let bat0 = Label::builder().css_classes(cls(&["dim","body"])).build();
-    let clock0 = Label::builder().css_classes(cls(&["ndot","ndot-md","ink"])).build();
     let net = net0.clone();
     let audio_label = audio0.clone();
+    let bt = bt0.clone();
     let bat = bat0.clone();
-    let clock = clock0.clone();
     glib::timeout_add_local(std::time::Duration::from_millis(1000), move || {
         let snap = glyph_system::events::snap_cache().read().map(|s| s.clone()).unwrap_or_default();
         let net_text = match snap.network.state.as_str() {
@@ -62,6 +65,7 @@ pub fn stats_cluster(root: &Box) {
         } else {
             audio_label.set_text(&format!("♪ {}%", snap.audio.volume));
         }
+        bt.set_text(if !snap.bluetooth.available { "" } else if snap.bluetooth.powered { "ᛒ" } else { "ᛒ✕" });
         if snap.battery.available {
             let arrow = match snap.battery.status.as_str() {
                 "Charging" => "⯈",
@@ -73,16 +77,20 @@ pub fn stats_cluster(root: &Box) {
         } else {
             bat.set_text("");
         }
-        clock.set_text(&local_clock());
         glib::ControlFlow::Continue
     });
 
-    root.append(&net0);
-    root.append(&audio0);
-    root.append(&bat0);
-    root.append(&clock0);
+    // Right-side entries are one-button access to the Control Center.
+    for w in [net0, audio0, bt0, bat0] {
+        let btn = Button::builder().css_classes(cls(&["pill", "panel-stat"])).build();
+        btn.set_child(Some(&w));
+        let tx = st.tx.clone();
+        btn.connect_clicked(move |_| {
+            tx.send(ShellSignal::Window(Overlay::Control, ZAction::Toggle)).ok();
+        });
+        root.append(&btn);
+    }
 }
-
 /// Dot-matrix clock text; respects nothing extra yet (24h default).
 fn local_clock() -> String {
     use chrono::Local;
