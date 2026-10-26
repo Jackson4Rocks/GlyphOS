@@ -416,6 +416,8 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 .list-row {{ padding: 10px 14px; border-radius: 10px; margin: 2px 0; }}
 .list-row:hover {{ background-color: rgba(128,128,128,0.10); }}
 .list-row.focused {{ background-color: rgba(128,128,128,0.16); }}
+.notif-row {{ border-radius: 12px; }}
+.notif-row:focus, .notif-row:hover {{ outline: none; box-shadow: none; }}
 
 .cmdbar {{ padding: 12px; }}
 .sensitive-entry {{ box-shadow: 0 2px 10px rgba(0,0,0,{entry_shadow}); font-size: 16px; }}

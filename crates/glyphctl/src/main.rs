@@ -8,6 +8,7 @@ fn usage() {
     eprintln!("  command            toggle Glyph Command (Super+Space)");
     eprintln!("  control            toggle Control Center");
     eprintln!("  notify             toggle notifications");
+    eprintln!("  notif-send SUMMARY [BODY]  local notification through the shell");
     eprintln!("  launch <exec>      launch an application");
     eprintln!("  workspace <1|2|3>  switch workspace");
     eprintln!("  reload-theme       apply current glyphos.toml theme");
@@ -24,6 +25,11 @@ fn main() {
         "command" => Request::Command { action: ipc::SyncAction::Toggle },
         "control" => Request::ControlCenter { action: ipc::SyncAction::Toggle },
         "notify" => Request::Notifications { action: ipc::SyncAction::Toggle },
+        "notif-send" => {
+            let summary = args.get(1).cloned().unwrap_or_else(|| { eprintln!("notif-send SUMMARY [BODY]"); exit(2) });
+            let body = args.get(2..).map(|rest| rest.join(" ")).unwrap_or_default();
+            Request::Notify { summary, body }
+        }
         "launch" => {
             let exec = args.get(1).unwrap_or_else(|| { eprintln!("launch requires an exec"); exit(2) });
             Request::Launch { exec: exec.clone() }

@@ -13,5 +13,6 @@ gtk.workspace = true
 gdk.workspace = true
 glib.workspace = true
 gtk4-layer-shell.workspace = true
+zbus.workspace = true
 
 [dev-dependencies]

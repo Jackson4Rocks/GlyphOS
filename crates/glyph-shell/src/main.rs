@@ -9,6 +9,7 @@ mod apps;
 mod compositor;
 mod dispatch;
 mod ipc_server;
+mod notify_bus;
 mod state;
 mod ui;
 
@@ -41,12 +42,23 @@ fn main() {
     app.connect_activate(move |app| {
         // IPC channel: background thread → GTK main loop (std mpsc + pump).
         let (tx, rx) = std::sync::mpsc::channel::<ShellSignal>();
+        // Notification daemon bridge: UI closes are echoed onto the bus.
+        let (notif_close_tx, notif_close_rx) = std::sync::mpsc::channel::<(u32, u32)>();
+        let notifs: Arc<std::sync::Mutex<std::collections::VecDeque<crate::state::Notif>>> =
+            Arc::new(std::sync::Mutex::new(Default::default()));
         let st: Arc<ShellState> = Arc::new(ShellState {
             paths: paths.clone(),
             config: config.clone(),
             tx: tx.clone(),
             snap: std::sync::Mutex::new(glyph_system::events::SystemSnapshot::snapshot()),
+            notifs: notifs.clone(),
+            notif_close_tx: notif_close_tx.clone(),
         });
+
+        // Real D-Bus notification daemon (org.freedesktop.Notifications).
+        if let Err(e) = notify_bus::spawn(tx.clone(), notif_close_rx) {
+            eprintln!("glyph-shell: notification daemon failed to spawn: {e}");
+        }
 
         // Build every shell surface.
         ui::panel::build(&st, app);

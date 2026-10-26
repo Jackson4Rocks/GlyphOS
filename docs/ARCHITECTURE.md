@@ -64,8 +64,22 @@ blur pipeline is wired). CSS `backdrop-filter` stays per-material so
 Unix socket `$XDG_RUNTIME_DIR/glyphos/shell.sock` (mode 0600), JSON-per-line.
 `glyphctl` is the reference client; the same channel serves desktop
 keybinds (e.g. Hyprland binds map to `glyphctl command` etc.).
-Protocol: `{t:"command"|"control"|"notify"|"launch"|"workspace"|"reload-theme"|"ping"}` →
+Protocol: `{t:"command"|"control"|"notify"|"launch"|"workspace"|"reload-theme"|"notif-send"|"ping"}` →
 `{t:"ok"}` / `{t:"err",message}` / `{t:"pong",version,uptime_secs}`.
+
+## 4. Notification daemon (`glyph-shell::notify_bus`, phase 5)
+
+A `glyph-notifd` thread inside glyph-shell serves
+`org.freedesktop.Notifications` on the session bus (zbus 5 blocking API):
+
+- `Notify` / `CloseNotification` / `GetCapabilities` (`["body"]`) /
+  `GetServerInformation`; the well-known name is claimed with replace +
+  allow-replacement (standard daemon takeover semantics; if an unwilling
+  owner holds it, the reason is logged and nothing is faked).
+- Events cross into GTK through the shell signal channel;
+  the notify surface renders the latest entries and auto-hides.
+- UI-side closes are echoed back through a dedicated bridge channel as the
+  D-Bus `NotificationClosed(id, reason)` signal (spec reason codes).
 
 ## 4. Process model & failure policy
 
@@ -78,11 +92,10 @@ Protocol: `{t:"command"|"control"|"notify"|"launch"|"workspace"|"reload-theme"|"
 - System adapters return typed results; unavailable hardware surfaces an
   honest reason string ("no backlight device...") instead of hiding the UI.
 
-## 5. Future phases (tracked in docs/ROADMAP.md)
+## 6. Future phases (tracked in docs/ROADMAP.md)
 
 - glyphwm (Smithay): floating + tiling, layer-shell, rootwm protocol.
 - First-party applications (Files, Terminal, Settings, Store, Monitor…)
   consume `glyph-core` tokens and `glyph-system` adapters directly.
-- D-Bus notification daemon resident in `glyph-shell`.
 - dist/: archiso-based ISO, installer, polkit rules for backlight/store,
   greetd greeter integration.

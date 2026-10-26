@@ -31,8 +31,10 @@ Phases map 1:1 to the product plan; statuses updated only when verified.
 - [ ] light theme photography pass (tokens exist; visual QA pending)
 
 ## Phase 5 — System interfaces
+- [x] D-Bus notification daemon (real `org.freedesktop.Notifications` on the
+      session bus; verified with `notify-send` + `busctl` close loop)
 - [x] lock screen placeholder (marked "phase 5" in UI; honest)
-- [ ] D-Bus notification daemon in the shell (surface already exists)
+- [ ] notification history view + actions/sounds (daemon holds the store)
 - [ ] screenshot UI (grim plumbing exists in tests)
 - [ ] greetd greeter (layer-shell root; reuses tokens)
 

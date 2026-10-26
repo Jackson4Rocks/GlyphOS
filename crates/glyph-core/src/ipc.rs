@@ -24,6 +24,8 @@ pub enum Request {
     Workspace { index: u32 },
     /// Reload the rendered stylesheet (theme/glass hot reload).
     ReloadTheme,
+    /// Local test/dev notification through the shell's own path.
+    Notify { summary: String, body: String },
     /// Report basic runtime info.
     Ping,
 }

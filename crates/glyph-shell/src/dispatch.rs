@@ -28,8 +28,9 @@ thread_local! {
         std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
-/// Get a clone of the registered window handle.
-fn lookup(key: &str) -> Option<Window> {
+/// Get a clone of the registered window handle (used by the notification
+/// surface to re-present itself when a daemon event arrives).
+pub fn lookup(key: &str) -> Option<Window> {
     REG_MAP.with(|m| m.borrow().get(key).cloned())
 }
 
@@ -64,9 +65,10 @@ pub fn handle(st: &Arc<ShellState>, sig: ShellSignal) {
             reload_theme(&cfg);
         }
         ShellSignal::Workspace(i) => crate::compositor::switch_workspace(i),
-        ShellSignal::NotifyEvent(text) => {
-            // Notification daemon is phase 5; surface + logging exist now.
-            eprintln!("glyph-shell: notification event: {text}");
+        ShellSignal::Notification(n) => crate::ui::notify::on_notification(st, &n),
+        ShellSignal::NotificationClosed(id, reason) => {
+            crate::ui::notify::on_closed(st, id);
+            st.notif_close_tx.send((id, reason)).ok();
         }
     }
     let _ = hdr_marker::<Rc<()>>();
