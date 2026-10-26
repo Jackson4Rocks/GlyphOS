@@ -1,0 +1,13 @@
+[package]
+name = "glyphctl"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "glyphctl"
+path = "src/main.rs"
+
+[dependencies]
+glyph-core = { path = "../glyph-core" }
+serde.workspace = true
+serde_json.workspace = true

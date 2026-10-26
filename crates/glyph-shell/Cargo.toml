@@ -1,0 +1,17 @@
+[package]
+name = "glyph-shell"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+glyph-core = { path = "../glyph-core" }
+glyph-system = { path = "../glyph-system" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+gtk.workspace = true
+gdk.workspace = true
+glib.workspace = true
+gtk4-layer-shell.workspace = true
+
+[dev-dependencies]
