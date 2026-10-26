@@ -121,11 +121,13 @@ fn lazily_refresh_font_cache() {
 /// app read this exact stylesheet from glyph-core.
 fn install_css(config: &glyph_core::Config) {
     let css = glyph_core::tokens::stylesheet(&config.theme);
+    println!("glyph-shell: stylesheet → {}", css.lines().next().unwrap_or(""));
     let provider = gtk::CssProvider::new();
     provider.load_from_string(&css);
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().expect("glyph-shell requires a display"),
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_THEME,
+        gtk::STYLE_PROVIDER_PRIORITY_USER,
     );
 }
+

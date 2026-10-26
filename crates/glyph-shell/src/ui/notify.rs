@@ -22,6 +22,7 @@ pub fn build(_st: &Arc<crate::state::ShellState>, app: &gtk::Application) {
     );
     win.set_default_size(300, 90);
     win.add_css_class("glyph-root");
+    win.add_css_class("glass");
 
     let inner = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(6).build();
 

@@ -20,6 +20,9 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         "glyphos-dock",
     );
     LayerShell::auto_exclusive_zone_enable(&win);
+    win.add_css_class("glyph-root");
+    win.add_css_class("glass");
+    win.add_css_class("dock");
     let cfg_icon = st.config.read().unwrap().dock.icon_size as i32;
     let dock = DockBox::builder()
         .orientation(Orientation::Horizontal)

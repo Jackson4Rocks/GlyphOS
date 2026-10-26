@@ -57,7 +57,10 @@ pub fn handle(st: &Arc<ShellState>, sig: ShellSignal) {
         }
         ShellSignal::Launch(exec) => launch(&exec),
         ShellSignal::ReloadTheme => {
-            let cfg = st.config.read().unwrap().clone();
+            // Re-read glyphos.toml from disk: `glyphctl reload-theme` must
+            // reflect external edits, not just in-memory toggles.
+            let cfg = glyph_core::Config::load_or_default(&st.paths);
+            if let Ok(mut g) = st.config.write() { *g = cfg.clone(); }
             reload_theme(&cfg);
         }
         ShellSignal::Workspace(i) => crate::compositor::switch_workspace(i),
@@ -84,9 +87,10 @@ pub fn launch(exec: &str) {
 
 fn reload_theme(cfg: &glyph_core::Config) {
     let css = glyph_core::tokens::stylesheet(&cfg.theme);
+    eprintln!("glyph-shell: theme reloaded → {}", css.lines().next().unwrap_or(""));
     let provider = gtk::CssProvider::new();
     provider.load_from_string(&css);
     if let Some(d) = gtk::gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(&d, &provider, gtk::STYLE_PROVIDER_PRIORITY_THEME);
+        gtk::style_context_add_provider_for_display(&d, &provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
     }
 }

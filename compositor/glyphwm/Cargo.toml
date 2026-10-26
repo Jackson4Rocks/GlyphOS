@@ -1,0 +1,17 @@
+[package]
+name = "glyphwm"
+version.workspace = true
+edition.workspace = true
+description = "GlyphOS custom Wayland compositor (Smithay-based) — phase 3 target, feature-gated"
+
+# Building this crate is cheap by default: `run` pulls in Smithay and the
+# compositor implementation. DO NOT ship a fake without it — see src/main.rs.
+
+[features]
+default = []
+run = []
+
+# Smithay arrives in phase 3 alongside its backend bring-up; it is wired into
+# workspace.dependencies (currently commented) to keep day-to-day builds fast.
+[dependencies]
+glyph-core = { path = "../../crates/glyph-core" }

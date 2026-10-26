@@ -22,6 +22,7 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
     );
     win.set_default_size(340, 430);
     win.add_css_class("glyph-root");
+    win.add_css_class("glass");
 
     let root = VBox::builder().orientation(Orientation::Vertical).spacing(10).build();
     margin_all(&root, 12);
@@ -159,7 +160,7 @@ fn bright_tile(root: &VBox) {
 }
 
 fn theme_tile(root: &VBox, st: &Arc<ShellState>) {
-    let (tile, sub) = title_sub_tile("MODE", "Dark · Light");
+    let (tile, sub) = title_sub_tile("MODE", "AMOLED · Crystal");
     root.append(&tile);
 
     let mode_input = Button::builder().label("Switch").css_classes(cls(&["pill","body"])).build();
@@ -170,8 +171,8 @@ fn theme_tile(root: &VBox, st: &Arc<ShellState>) {
     glib::timeout_add_local(std::time::Duration::from_millis(2000), move || {
         let mode = cfg.read().unwrap().theme.appearance;
         sub.set_text(&match mode {
-            glyph_core::tokens::AppearanceMode::Dark => "Dark",
-            glyph_core::tokens::AppearanceMode::Light => "Light",
+            glyph_core::tokens::AppearanceMode::Dark => "AMOLED BLACK",
+            glyph_core::tokens::AppearanceMode::Light => "CRYSTAL WHITE",
             _ => "Auto",
         });
         glib::ControlFlow::Continue

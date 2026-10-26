@@ -20,9 +20,13 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         "glyphos-panel",
     );
     win.add_css_class("glyph-root");
+    win.add_css_class("glass");
     win.add_css_class("panel");
 
     let root = Box::builder().orientation(Orientation::Horizontal).spacing(12).build();
+
+    // Fixed-height sliver so the top layer surface maps with real content.
+    root.set_height_request(36);
 
     // Fixed heights: a 34px sliver, styled via .panel class padding.
     win.set_child(Some(&root));

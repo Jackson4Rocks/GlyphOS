@@ -1,60 +1,104 @@
 //! GlyphOS design tokens and theme system.
 //!
+//! Two canonical palettes, named as products, not accidents:
+//!   • **AMOLED Black** — absolute black (`#000000`) surfaces, true off-pixel
+//!     economics on OLED, subtle light reflections, restrained illumination.
+//!   • **Crystal White** — near-white crystalline surfaces, black ink,
+//!     soft gray separators, industrial clean contrast.
+//!
 //! Single source of truth for colors, glass materials, typography, spacing,
 //! radii and motion. The shell generates GTK CSS from these; first-party apps
-//! may load the same tokens via `load_css()`.
+//! may load the same stylesheet via `stylesheet()`.
 
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------- palette
-/// Raw palette primitives. Dark and light themes both derive from this.
-pub mod palette {
-    /// Absolute black (nyx).
-    pub const BLACK: &str = "#000000";
-    /// Deep background (nyx-1).
-    pub const DEEP: &str = "#080808";
-    /// Elevated dark surface (nyx-2).
-    pub const ELEVATED: &str = "#141414";
-    /// Secondary dark surface (nyx-3).
-    pub const RAISED: &str = "#1C1C1C";
-    /// Light background (lumen-1, warm neutral).
-    pub const LIGHT_BG: &str = "#F2F2F0";
-    /// White surface (lumen-2).
-    pub const WHITE: &str = "#FFFFFF";
-    /// Primary text on dark.
-    pub const TEXT_DARK: &str = "#FFFFFF";
-    /// Secondary text on dark.
-    pub const TEXT_SECONDARY_DARK: &str = "#ADADAD";
-    /// Primary text on light.
-    pub const TEXT_LIGHT: &str = "#101010";
-    /// Secondary text on light.
-    pub const TEXT_SECONDARY_LIGHT: &str = "#626262";
-    /// Signature red accent (pulse).
-    pub const ACCENT_RED: &str = "#D71920";
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ThemePreset {
+    /// Absolute-black AMOLED palette (the default dark experience).
+    #[default]
+    AmoledBlack,
+    /// Crystal-white crystalline palette (the default light experience).
+    CrystalWhite,
+}
+
+/// One complete surface palette for a mode.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Palette {
+    /// Wallpaper-behind root color.
+    pub bg_root: Rgba,
+    /// Primary window/panel surface.
+    pub surface: Rgba,
+    /// Elevated sibling surface.
+    pub surface_elevated: Rgba,
+    /// Secondary raised surface.
+    pub surface_raised: Rgba,
+    /// Primary ink.
+    pub ink: Rgba,
+    /// Secondary ink.
+    pub ink_dim: Rgba,
+    /// Thin separator tint (used at low alpha).
+    pub separator: Rgba,
+    /// Glass border tint.
+    pub glass_border: Rgba,
+    /// Glass tint color (the blur-kissed surface).
+    pub glass_tint: Rgba,
+}
+
+/// AMOLED Black — absolute black, no ambient glow.
+pub fn amoled_black() -> Palette {
+    Palette {
+        bg_root: Rgba::hex("#000000"),
+        surface: Rgba::hex("#0A0A0A"),
+        surface_elevated: Rgba::hex("#111111"),
+        surface_raised: Rgba::hex("#161616"),
+        ink: Rgba::hex("#FFFFFF"),
+        ink_dim: Rgba::hex("#ADADAD"),
+        separator: Rgba::hex("#FFFFFF").with_alpha(0.08),
+        glass_border: Rgba::hex("#FFFFFF").with_alpha(0.10),
+        glass_tint: Rgba::hex("#000000"),
+    }
+}
+
+/// Crystal White — clean crystalline surfaces, black ink.
+pub fn crystal_white() -> Palette {
+    Palette {
+        bg_root: Rgba::hex("#FAFAF8"),
+        surface: Rgba::hex("#FFFFFF"),
+        surface_elevated: Rgba::hex("#FFFFFF"),
+        surface_raised: Rgba::hex("#F2F2EF"),
+        ink: Rgba::hex("#101010"),
+        ink_dim: Rgba::hex("#5C5C5C"),
+        separator: Rgba::hex("#101010").with_alpha(0.08),
+        glass_border: Rgba::hex("#101010").with_alpha(0.08),
+        glass_tint: Rgba::hex("#FFFFFF"),
+    }
 }
 
 // ---------------------------------------------------------------- tokens
-/// Which appearance is active.
+/// Which mode (as in day/night; each resolves to a palette).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum AppearanceMode {
+    /// AMOLED Black on all surfaces.
     #[default]
     Dark,
+    /// Crystal White on all surfaces.
     Light,
-    /// Follow a schedule / sensor; resolved into Dark or Light at runtime.
+    /// Follow a schedule; resolves into one of the two presets.
     Auto,
 }
 
-/// Glass material strength presets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum GlassLevel {
     /// Full frosted-glass pipeline (blur + tint).
     #[default]
     Frosted,
-    /// Reduced-effects mode for weaker GPUs.
+    /// Reduced-effects mode for weaker GPUs: no blur, strong tint.
     Reduced,
-    /// Accessibility / cutout mode: near-opaque surfaces, no blur.
+    /// Accessibility / cutout mode: near-opaque, no blur, highest contrast.
     Opaque,
 }
 
@@ -63,6 +107,9 @@ pub enum GlassLevel {
 #[serde(rename = "kebab-case", default)]
 pub struct Tokens {
     pub appearance: AppearanceMode,
+    /// Explicit palette override; when unset the appearance decides
+    /// (Dark → amoled_black, Light → crystal_white).
+    pub preset: Option<ThemePreset>,
     pub accent: Rgba,
     pub glass: GlassLevel,
     /// Base surface opacity of glass shells (0..100).
@@ -89,7 +136,8 @@ impl Default for Tokens {
     fn default() -> Self {
         Self {
             appearance: AppearanceMode::Dark,
-            accent: Rgba::hex(palette::ACCENT_RED),
+            preset: None,
+            accent: Rgba::hex("#D71920"),
             glass: GlassLevel::Frosted,
             glass_opacity: 82,
             blur_quality: 70,
@@ -128,7 +176,8 @@ impl Rgba {
         format!("rgba({r},{g},{b},{:.3})", a as f32 / 255.0)
     }
 
-    /// Same color, mixed toward alpha `0` by factor `t`.
+    /// Same color with a new alpha channel factor `t` (0..1). For a fully
+    /// transparent tint pair such as glass surfaces this recolors alpha only.
     pub fn with_alpha(self, t: f32) -> Self {
         let [r, g, b, _] = self.0;
         Self([r, g, b, (255.0 * t).clamp(0.0, 255.0) as u8])
@@ -145,7 +194,11 @@ impl Rgba {
 impl From<Rgba> for String {
     fn from(c: Rgba) -> String {
         let [r, g, b, a] = c.0;
-        if a == 255 { format!("#{r:02X}{g:02X}{b:02X}") } else { format!("#{r:02X}{g:02X}{b:02X}{a:02X}") }
+        if a == 255 {
+            format!("#{r:02X}{g:02X}{b:02X}")
+        } else {
+            format!("#{r:02X}{g:02X}{b:02X}{a:02X}")
+        }
     }
 }
 
@@ -166,6 +219,8 @@ pub struct GlassMaterial {
     pub tint_opacity: f32,
     /// Border color used on opaque-free surfaces.
     pub border: Rgba,
+    /// Tint color the glass fades toward.
+    pub tint: Rgba,
     /// Dim applied to the desktop beneath the surface, 0..1.
     pub background_dim: f32,
 }
@@ -176,44 +231,54 @@ impl Tokens {
         self.display_font.clone().unwrap_or_else(|| self.fallback_display_font.clone())
     }
 
+    /// Palette actually in effect (appearance mode + optional preset pin).
+    pub fn palette(&self) -> Palette {
+        let dark = self.effective_appearance().0;
+        match self.preset {
+            Some(ThemePreset::AmoledBlack) => amoled_black(),
+            Some(ThemePreset::CrystalWhite) => crystal_white(),
+            None => {
+                if dark { amoled_black() } else { crystal_white() }
+            }
+        }
+    }
+
+    /// (is_dark, resolved mode)
+    pub fn effective_appearance(&self) -> (bool, AppearanceMode) {
+        let mode = if self.appearance == AppearanceMode::Auto { auto_daytime() } else { self.appearance };
+        (mode == AppearanceMode::Dark, mode)
+    }
+
     /// Glass material for large shell surfaces (panel, dock, command bar).
     pub fn glass_shell(&self) -> GlassMaterial {
+        let p = self.palette();
         let opacity = self.glass_opacity as f32 / 100.0;
+        let base = GlassMaterial {
+            blur_sigma: match self.glass { GlassLevel::Frosted => scale_blur(self.blur_quality), _ => 0 },
+            tint_opacity: opacity,
+            border: p.glass_border,
+            tint: p.glass_tint,
+            background_dim: 0.06,
+        };
         match self.glass {
-            GlassLevel::Frosted => GlassMaterial {
-                blur_sigma: scale_blur(self.blur_quality),
-                tint_opacity: opacity * 0.80,
-                border: border_for(self),
-                background_dim: 0.06,
-            },
-            GlassLevel::Reduced => GlassMaterial {
-                blur_sigma: 0,
-                tint_opacity: 0.94,
-                border: border_for(self),
-                background_dim: 0.05,
-            },
+            GlassLevel::Frosted => base,
+            GlassLevel::Reduced => GlassMaterial { tint_opacity: 0.94, ..base },
             GlassLevel::Opaque => GlassMaterial {
-                blur_sigma: 0,
+                // AMOLED cutout: fully solid, zero luminance leakage.
                 tint_opacity: 1.0,
-                border: border_for(self),
                 background_dim: 0.0,
+                ..base
             },
         }
     }
 
-    /// Glass material for popovers and menus (slightly stronger dimming).
+    /// Glass material for popovers and menus (a notch stronger).
     pub fn glass_popover(&self) -> GlassMaterial {
         let m = self.glass_shell();
         GlassMaterial {
             tint_opacity: (m.tint_opacity + 0.06).min(1.0),
             ..m
         }
-    }
-
-    /// Dark or light ink, resolving the Auto mode into a concrete appearance.
-    pub fn effective_appearance(&self) -> (bool, AppearanceMode) {
-        let mode = if self.appearance == AppearanceMode::Auto { auto_daytime() } else { self.appearance };
-        (mode == AppearanceMode::Dark, mode)
     }
 }
 
@@ -222,12 +287,7 @@ fn scale_blur(q: u8) -> u8 {
     sigma.clamp(0.0, 42.0) as u8
 }
 
-fn border_for(tokens: &Tokens) -> Rgba {
-    let is_dark = tokens.effective_appearance().0;
-    if is_dark { Rgba::hex("#FFFFFF").with_alpha(0.10) } else { Rgba::hex("#000000").with_alpha(0.08) }
-}
-
-/// Resolves Auto appearance for the cases we can detect: simple daylight curve.
+/// Resolves Auto appearance by a simple daylight curve (7:00–20:00 → light).
 fn auto_daytime() -> AppearanceMode {
     use chrono::{DateTime, Local, Timelike};
     let now: DateTime<Local> = Local::now();
@@ -237,67 +297,69 @@ fn auto_daytime() -> AppearanceMode {
 
 // ---------------------------------------------------------------- css gen
 /// Render the GlyphOS stylesheet. This is the canonical CSS for every
-/// first-party surface. Returns a fresh string; apps call `load_css()`.
+/// first-party surface. Mode-driven: AMOLED Black or Crystal White.
 pub fn stylesheet(tokens: &Tokens) -> String {
-    let (is_dark, _) = tokens.effective_appearance();
+    let p = tokens.palette();
+    let (_, mode) = tokens.effective_appearance();
     let shell = tokens.glass_shell();
     let pop = tokens.glass_popover();
 
-    // Palette derived by mode.
-    let (bg_root, ink, ink_dim, sep) = if is_dark {
-        (palette::DEEP, palette::TEXT_DARK, palette::TEXT_SECONDARY_DARK, "#FFFFFF")
-    } else {
-        (palette::LIGHT_BG, palette::TEXT_LIGHT, palette::TEXT_SECONDARY_LIGHT, "#000000")
-    };
-    let surface = if is_dark { palette::ELEVATED } else { palette::WHITE };
-
     let red = tokens.accent.css();
     let red_soft = tokens.accent.with_alpha(0.25).css();
+    let ink = p.ink.css();
+    let ink_dim = p.ink_dim.css();
+    let sep = p.separator.css();
+    let surface = p.surface.css();
+    let surface_raised = p.surface_raised.css();
+    let bg_root = p.bg_root.css();
+    let shell_border = shell.border.css();
+    let pop_border = pop.border.css();
+    let shell_tint = shell.tint.with_alpha(shell.tint_opacity).css();
+    let pop_tint = pop.tint.with_alpha(pop.tint_opacity).css();
 
-    let shell_alpha = shell.tint_opacity;
-    let shell_alpha2 = (shell.tint_opacity * 0.92).clamp(0.0, 1.0);
-    let shell_border_border = shell.border.css();
-    let pop_border = pop.tint_opacity;
-    let pop_border_b = pop.border.css();
-
-    let blur_ = if shell.blur_sigma == 0 { "none" } else { "grayscale(1) blur(var(--blur-sigma))" };
+    let _ = shell.blur_sigma; // blur executes compositor-side (see ARCHITECTURE)
     let radius = tokens.corner_radius;
     let anim_len = (tokens.animation_intensity as f32 / 100.0 * 220.0).max(90.0) as u32;
-    let anim_ms = format!("{anim_len}ms");
 
     let display = tokens.display_font_resolved();
     let mono = &tokens.mono_font;
     let ui = &tokens.ui_font;
+    // The header names the *palette actually in effect*, honoring preset pins.
+    let mode_name = match tokens.preset {
+        Some(ThemePreset::AmoledBlack) => "AMOLED BLACK",
+        Some(ThemePreset::CrystalWhite) => "CRYSTAL WHITE",
+        None => match mode {
+            AppearanceMode::Dark => "AMOLED BLACK",
+            AppearanceMode::Light => "CRYSTAL WHITE",
+            AppearanceMode::Auto => "AUTO",
+        },
+    };
 
     format!(
-        r#"
-/* ==== GlyphOS stylesheet · generated from design tokens — do not hand-edit ==== */
+        r#"/* == GlyphOS {mode_name} · generated · do not hand-edit == */
 :root {{
     --bg-root: {bg_root};
     --surface: {surface};
+    --surface-raised: {surface_raised};
     --ink: {ink};
     --ink-dim: {ink_dim};
     --sep: {sep};
     --red: {red};
     --red-soft: {red_soft};
-    --shell-alpha: {shell_alpha:.3};
-    --shell-alpha-2: {shell_alpha2:.3};
-    --shell-border: {shell_border_border};
-    --pop-alpha: {pop_border:.3};
-    --pop-border: {pop_border_b};
-    --blur-sigma: {sig}px;
+    --shell-tint: {shell_tint};
+    --shell-border: {shell_border};
+    --pop-tint: {pop_tint};
+    --pop-border: {pop_border};
     --radius: {radius}px;
-    --anim: {anim_ms};
+    --anim: {anim_len}ms;
     --display-font: "{display}";
     --ui-font: "{ui}";
     --mono-font: "{mono}";
-    --shadow-lg: 0 12px 32px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.26);
 }}
 
 * {{
     transition: background-color var(--anim) ease-out,
                 box-shadow var(--anim) ease-out, opacity var(--anim) ease-out;
-    outline: 0 solid transparent;
 }}
 
 .glyph-root {{
@@ -307,20 +369,14 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 }}
 
 /* ——— glass surfaces ——— */
-.glass {{
-    background: rgba(0,0,0,var(--shell-alpha));
-    border-color: transparent;
+.glass, .panel, .dock {{
+    background-color: {shell_tint};
+    border: 1px solid {shell_border};
 }}
-.glass-pop {{ background: rgba(0,0,0,var(--pop-alpha)); }}
+.glass-pop {{ background-color: {pop_tint}; border: 1px solid {pop_border}; }}
+.cmdbar {{ box-shadow: 0 12px 32px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.26); }}
 
-.glyph-glass {{
-    background-color: var(--shell-alpha-color, rgba(10,10,10,0.86));
-    backdrop-filter: {blur_};
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-}}
-
-.window {{ background: var(--surface); border-radius: calc(var(--radius) - 6px); }}
+.window {{ background: {surface}; border-radius: calc(var(--radius) - 6px); }}
 
 /* ——— typography roles ——— */
 .h1 {{ font-size: 28px; font-weight: 600; letter-spacing: 0.5px; }}
@@ -330,81 +386,110 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 .small {{ font-size: 12px; }}
 .mono {{ font-family: var(--mono-font); font-size: 13px; }}
 .dim {{ color: var(--ink-dim); }}
+.ink {{ color: var(--ink); }}
 .ndot {{ font-family: var(--display-font); font-weight: 600; letter-spacing: 2px; }}
+.ndot-xs {{ font-size: 11px; }}
+.ndot-sm {{ font-size: 13px; }}
+.ndot-md {{ font-size: 18px; }}
+.ndot-lg {{ font-size: 28px; }}
+.ndot-xl {{ font-size: 44px; }}
+.ndot-clock {{ font-size: 96px; }}
 
-/* ——— header / time ——— */
-.clock {{ font-family: var(--display-font); font-weight: 600; font-size: 96px; color: var(--ink); letter-spacing: 4px; }}
-.window-label {{ font-family: var(--ui-font); font-size: 12px; }}
-.workspace-pill {{ border-radius: 12px; padding: 0 10px; font-family: var(--display-font); font-size: 12px; }}
+/* ——— panel / dock geometry ——— */
+.panel {{ padding: 6px 12px; }}
+.workspace-pill {{
+    min-height: 22px; min-width: 22px; padding: 0 8px;
+    border-radius: 11px; background: transparent; color: {ink_dim};
+    font-family: var(--display-font);
+}}
+.workspace-pill.focused {{ background-color: {red_soft}; color: {ink}; box-shadow: 0 0 0 1px {red} inset; }}
 
 /* ——— generic widgets ——— */
 .pill {{
     border-radius: 14px;
     padding: 4px 10px;
-    background-color: transparent;
-    border: 1px solid var(--shell-border);
+    background-color: rgba(128,128,128,0.08);
 }}
-.pill:hover {{ border-color: rgba(255,255,255,0.22); }}
-.pill.accent {{ background: var(--red-soft); border-color: transparent; }}
-.pill.focused {{ border-color: var(--red); }}
+.pill:hover {{ background-color: rgba(128,128,128,0.16); }}
+.pill.focused {{ border-color: {red}; background-color: {red_soft}; }}
 
-.hoverable:hover {{ background-color: rgba(255,255,255,0.05); }}
-.hoverable:active {{ background-color: rgba(255,255,255,0.09); }}
-.dock-item {{ border-radius: 10px; padding: 4px 8px; }}
-.dock-item:focus {{ border-color: var(--red); }}
+.list-row {{ padding: 10px 14px; border-radius: 10px; margin: 2px 0; }}
+.list-row:hover {{ background-color: rgba(128,128,128,0.10); }}
+.list-row.focused {{ background-color: rgba(128,128,128,0.16); }}
 
-.list-row {{
-    padding: 10px 14px;
-    border-radius: 10px;
-    margin: 2px 0;
-}}
-.list-row:hover {{ background-color: rgba(255,255,255,0.06); }}
-.list-row.focused {{ background-color: rgba(255,255,255,0.12); }}
+.cmdbar {{ padding: 12px; }}
+.sensitive-entry {{ box-shadow: 0 2px 10px rgba(0,0,0,{entry_shadow}); font-size: 16px; }}
 
-.cmdbar {{
-    background: transparent;
-    border-radius: 18px;
-    padding: 12px;
-    box-shadow: var(--shadow-lg);
+input:focus, entry:focus {{ outline: 1px solid {red}; }}
+button:focus {{ outline: 1px solid {red}; outline-offset: -1px; }}
+
+/* ——— subtle grid & dots signature (identity lines) ——— */
+.dotgrid {{
+    background-image: radial-gradient(circle, {sep} 1px, transparent 1px);
+    background-size: 12px 12px;
+    opacity: 0.35;
 }}
 
-.sensitive-entry {{ box-shadow: 0 2px 10px rgba(0,0,0,0.25); font-size: 16px; }}
-
-input:focus, entry:focus, button:focus {{ outline: 2px solid var(--red); }}
-
-.vm-indicator {{
-    min-width: 12px; border-radius: 3px; background-color: rgba(255,255,255,0.14);
-    transition: all var(--anim) ease-out;
-}}
-.vm-indicator.focused {{ background-color: var(--red); }}
-
-.checkpoint {{
-    min-height: 34px; min-width: 34px; border-radius: 17px;
-    border: 1px solid var(--shell-border);
-}}
-
-/* scrollbars */
 scrollbar {{ min-width: 8px; min-height: 8px; background-color: transparent; }}
 scrollbar slider {{ background-color: rgba(128,128,128,0.42); border-radius: 4px; }}
 "#,
         bg_root = bg_root,
         surface = surface,
+        surface_raised = surface_raised,
         ink = ink,
         ink_dim = ink_dim,
         sep = sep,
         red = red,
         red_soft = red_soft,
-        shell_alpha = shell_alpha,
-        shell_alpha2 = shell_alpha2,
-        shell_border_border = shell_border_border,
+        shell_tint = shell_tint,
+        shell_border = shell_border,
+        pop_tint = pop_tint,
         pop_border = pop_border,
-        pop_border_b = pop_border_b,
-        sig = 24,
         radius = radius,
-        anim_ms = anim_ms,
+        anim_len = anim_len,
         display = display,
         ui = ui,
         mono = mono,
-        blur_ = blur_,
+        mode_name = mode_name,
+        entry_shadow = entry_shadow(tokens),
     )
+}
+
+fn entry_shadow(tokens: &Tokens) -> f32 {
+    let (dark, _) = tokens.effective_appearance();
+    if dark { 0.25 } else { 0.06 }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn amoled_and_crystal_render_distinct_palettes() {
+        let dark = Tokens { appearance: AppearanceMode::Dark, ..Default::default() };
+        let light = Tokens { appearance: AppearanceMode::Light, ..Default::default() };
+        let d = stylesheet(&dark);
+        let l = stylesheet(&light);
+        assert!(d.contains("AMOLED BLACK"), "dark header missing");
+        assert!(l.contains("CRYSTAL WHITE"), "light header missing");
+        assert_eq!(d, stylesheet(&dark));
+        // AMOLED: absolute black root.
+        assert!(d.contains("rgba(0,0,0,1.000)"), "background must be pure black: {}", {
+            let i = d.find("--bg-root").unwrap();
+            &d[i..i + 34]
+        });
+        // Crystal: near-white root, never pure #FFF glow.
+        assert!(l.contains("rgba(250,250,248,1.000)"), "crystal root missing");
+    }
+
+    #[test]
+    fn pinned_preset_overrides_appearance() {
+        let t = Tokens {
+            appearance: AppearanceMode::Dark,
+            preset: Some(ThemePreset::CrystalWhite),
+            ..Default::default()
+        };
+        assert!(stylesheet(&t).contains("CRYSTAL WHITE"));
+    }
 }

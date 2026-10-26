@@ -55,7 +55,7 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         .spacing(10)
         .css_classes(cls(&["cmdbar"]))
         .build();
-    let outer = gtk::Box::builder().css_classes(cls(&["glyph-root"])).build();
+    let outer = gtk::Box::builder().css_classes(cls(&["glyph-root","glass"])).build();
     outer.append(&cmdbar);
     win.set_child(Some(&outer));
 
