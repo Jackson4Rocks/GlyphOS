@@ -43,19 +43,21 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         &win,
         Layer::Top,
         KeyboardMode::OnDemand,
-        &[Edge::Top, Edge::Left, Edge::Right],
+        &[Edge::Top],
         &[(Edge::Top, 60)],
         0,
         "glyphos-command",
     );
     win.set_default_size(560, 360);
     win.add_css_class("glyph-root");
-
-    let root = VBox::builder()
+    let cmdbar = VBox::builder()
         .orientation(Orientation::Vertical)
         .spacing(10)
         .css_classes(cls(&["cmdbar"]))
         .build();
+    let outer = gtk::Box::builder().css_classes(cls(&["glyph-root"])).build();
+    outer.append(&cmdbar);
+    win.set_child(Some(&outer));
 
     // ——— prompt ———
     let prompt = Entry::builder()
@@ -63,7 +65,7 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         .css_classes(cls(&["sensitive-entry","body"]))
         .build();
     margin_all(&prompt, 8);
-    root.append(&prompt);
+    cmdbar.append(&prompt);
 
     // ——— results ———
     let list = ListBox::builder().build();
@@ -74,12 +76,11 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         .min_content_height(140)
         .build();
     margin_all(&scroll, 4);
-    root.append(&scroll);
+    cmdbar.append(&scroll);
 
     // ——— hint ———
     let hint = ui_label("↟↟ enter launch · ↑↓ navigate · esc close · try “workspace 2”", "small dim");
-    root.append(&hint);
-    win.set_child(Some(&root));
+    cmdbar.append(&hint);
 
     // ——— query → results ———
     {
@@ -137,7 +138,8 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
 }
 
 thread_local! {
-    static LAST_QUERY: Rc<std::cell::RefCell<String>> = Rc::new(std::cell::RefCell::new(String::new()));
+    // Sentinel ≠ any user text so the first open always rebuilds results.
+    static LAST_QUERY: Rc<std::cell::RefCell<String>> = Rc::new(std::cell::RefCell::new(String::from("\u{1}glyphos-init")));
 }
 
 fn last_query(_store: &Rc<std::cell::RefCell<Vec<Hit>>>) -> Rc<std::cell::RefCell<String>> {

@@ -5,7 +5,7 @@ use crate::state::ShellState;
 use crate::ui::widget_helpers::*;
 use gtk::prelude::*;
 use gtk::{glib, Box as DockBox, Orientation, Window};
-use gtk4_layer_shell::{Edge, KeyboardMode, Layer};
+use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use std::sync::Arc;
 
 pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
@@ -14,11 +14,12 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
         &win,
         Layer::Top,
         KeyboardMode::None,
-        &[Edge::Top, Edge::Left, Edge::Right],
-        &[],
+        &[Edge::Bottom],
+        &[(Edge::Bottom, 10)],
         0,
         "glyphos-dock",
     );
+    LayerShell::auto_exclusive_zone_enable(&win);
     let cfg_icon = st.config.read().unwrap().dock.icon_size as i32;
     let dock = DockBox::builder()
         .orientation(Orientation::Horizontal)
