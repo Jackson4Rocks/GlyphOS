@@ -308,6 +308,8 @@ pub fn stylesheet(tokens: &Tokens) -> String {
     let red_soft = tokens.accent.with_alpha(0.25).css();
     let ink = p.ink.css();
     let ink_dim = p.ink_dim.css();
+    let border_ink_dim = ink_dim.clone();
+    let card_tint = pop.tint.with_alpha((pop.tint_opacity * 0.55).clamp(0.05, 1.0)).css();
     let sep = p.separator.css();
     let surface = p.surface.css();
     let surface_raised = p.surface_raised.css();
@@ -359,8 +361,21 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 
 * {{
     transition: background-color var(--anim) ease-out,
-                box-shadow var(--anim) ease-out, opacity var(--anim) ease-out;
+                box-shadow var(--anim) ease-out, opacity var(--anim) ease-out,
+                transform var(--anim) ease-out;
 }}
+
+/* Entrance animations (run on map): flyout drops in from the bar. */
+@keyframes drop-in {{
+    from {{ opacity: 0; transform: translateY(-16px); }}
+    to {{ opacity: 1; transform: translateY(0); }}
+}}
+@keyframes slide-up {{
+    from {{ opacity: 0; transform: translateY(10px); }}
+    to {{ opacity: 1; transform: translateY(0); }}
+}}
+.quick-shell {{ animation: drop-in var(--anim) cubic-bezier(0.2,0.9,0.3,1); }}
+.cmdbar {{ animation: drop-in var(--anim) ease-out; }}
 
 .glyph-root {{
     font-family: var(--ui-font);
@@ -395,6 +410,25 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 .ndot-xl {{ font-size: 44px; }}
 .ndot-clock {{ font-size: 96px; }}
 
+/* ——— app-grid mark (2×2 tiles, one accent tile) ——— */
+.logo-tile {{ min-width: 9px; min-height: 9px; border-radius: 3px; margin: 1px; }}
+.logo-tile.t1 {{ background-color: rgba(255,255,255,0.92); }}
+.logo-tile.t2 {{ background-color: {red}; }}
+.logo-tile.t3 {{ background-color: transparent; border: 1px solid {border_ink_dim}; }}
+.logo-tile.t4 {{ background-color: {border_ink_dim}; }}
+
+/* ——— quick flyout (clock) ——— */
+.quick-shell {{ padding: 12px; border-radius: 16px; min-width: 640px; }}
+.quick-card {{ padding: 14px 16px; border-radius: 12px; background-color: {card_tint}; min-width: 320px; }}
+.quick-col {{ min-width: 360px; }}
+.cal-day {{ font-family: var(--mono-font); font-size: 13px; padding: 3px 6px; border-radius: 8px; }}
+.cal-day.today {{ background-color: {red_soft}; border: 1px solid {red}; color: {ink}; }}
+.transport {{ min-width: 40px; min-height: 32px; }}
+
+/* ——— desktop (bottom layer, owns the wallpaper) ——— */
+.desktop {{ background-color: {bg_root}; }}
+.desktop-mark {{ padding: 44px 72px; border-radius: 24px; }}
+
 /* ——— panel / dock geometry ——— */
 .panel {{ padding: 6px 12px; }}
 .workspace-pill {{
@@ -411,6 +445,7 @@ pub fn stylesheet(tokens: &Tokens) -> String {
     background-color: rgba(128,128,128,0.08);
 }}
 .pill:hover {{ background-color: rgba(128,128,128,0.16); }}
+.pill:active {{ transform: scale(0.94); }}
 .pill.focused {{ border-color: {red}; background-color: {red_soft}; }}
 
 .list-row {{ padding: 10px 14px; border-radius: 10px; margin: 2px 0; }}

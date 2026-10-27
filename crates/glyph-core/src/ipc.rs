@@ -26,6 +26,8 @@ pub enum Request {
     ReloadTheme,
     /// Local test/dev notification through the shell's own path.
     Notify { summary: String, body: String },
+    /// Toggle the clock flyout (calendar/media/notifications).
+    Quick,
     /// Report basic runtime info.
     Ping,
 }

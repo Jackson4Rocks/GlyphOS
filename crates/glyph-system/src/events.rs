@@ -4,6 +4,7 @@
 use crate::battery::BatteryState;
 use crate::bluetooth::BluetoothState;
 use crate::brightness::BrightnessState;
+use crate::media::MediaState;
 use crate::network::NetworkState;
 use crate::pulse::AudioState;
 
@@ -15,6 +16,7 @@ pub struct SystemSnapshot {
     pub battery: BatteryState,
     pub brightness: BrightnessState,
     pub bluetooth: BluetoothState,
+    pub media: MediaState,
 }
 
 impl SystemSnapshot {
@@ -26,6 +28,7 @@ impl SystemSnapshot {
             battery: crate::battery::battery_state(),
             brightness: crate::brightness::brightness_state(),
             bluetooth: crate::bluetooth::bluetooth_state(),
+            media: crate::media::media_state(),
         }
     }
 }

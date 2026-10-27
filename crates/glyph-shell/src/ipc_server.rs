@@ -64,6 +64,7 @@ fn handle_one(req: ipc::Request, tx: &SignalTx) -> String {
         ipc::Request::Launch { exec } => { tx.send(ShellSignal::Launch(exec)).ok(); ipc::send_ok() }
         ipc::Request::Workspace { index } => { tx.send(ShellSignal::Workspace(index)).ok(); ipc::send_ok() }
         ipc::Request::ReloadTheme => { tx.send(ShellSignal::ReloadTheme).ok(); ipc::send_ok() }
+        ipc::Request::Quick => { tx.send(ShellSignal::Window(Overlay::Quick, ZAction::Toggle)).ok(); ipc::send_ok() }
         ipc::Request::Notify { summary, body } => {
             tx.send(ShellSignal::Notification(crate::state::Notif {
                 id: crate::state::next_local_notif_id(),

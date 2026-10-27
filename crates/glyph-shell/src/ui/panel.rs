@@ -28,32 +28,36 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
     root.set_height_request(38);
     win.set_child(Some(&root));
 
-    // ——— left: brand + real workspace indicators ———
+    // ——— left: app-grid mark + real workspace indicators ———
     let left = Box::builder().orientation(Orientation::Horizontal).spacing(10).build();
-    left.append(&ndot_label("GLYPHOS", "ndot-sm"));
+    left.append(&logo_mark());
     left.append(&vsep());
     let row = Box::builder().orientation(Orientation::Horizontal).spacing(6).build();
     left.append(&row);
     crate::ui::panel_parts::workspaces_row(&row);
     root.append(&left);
 
-    // ——— center: the clock, clickable → Control Center ———
-    let center = Box::builder().orientation(Orientation::Horizontal).hexpand(true).build();
+    // ——— center: the clock, clickable → Quick flyout ———
+    // Two equal expanding spacers pin the button to the true center.
+    // (Nested halign-Center inside hexpand doesn't center in this GTK combo.)
     let clk_btn = Button::builder()
         .css_classes(cls(&["pill", "ndot", "ndot-md", "ink"]))
-        .tooltip_text("GlyphOS Control Center")
+        .tooltip_text("Calendar · Media · Notifications")
         .build();
     let clock = gtk::Label::builder().css_classes(cls(&["ndot", "ndot-md", "ink"])).build();
     clk_btn.set_child(Some(&clock));
     let tx = st.tx.clone();
     clk_btn.connect_clicked(move |_| {
         tx.send(crate::state::ShellSignal::Window(
-            crate::state::Overlay::Control,
+            crate::state::Overlay::Quick,
             crate::state::ZAction::Toggle,
         )).ok();
     });
-    center.append(&centered(&clk_btn));
-    root.append(&center);
+    let sp1 = Box::builder().orientation(Orientation::Horizontal).hexpand(true).build();
+    let sp2 = Box::builder().orientation(Orientation::Horizontal).hexpand(true).build();
+    root.append(&sp1);
+    root.append(&clk_btn);
+    root.append(&sp2);
 
     // ——— right: honest system indicators ———
     let right = Box::builder().orientation(Orientation::Horizontal).spacing(8).build();
@@ -73,10 +77,22 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
     win.present();
 }
 
-/// Keep the clock pinned to the true center of a full-width panel.
-fn centered(w: &Button) -> Box {
-    let b = Box::builder().orientation(Orientation::Horizontal).build();
-    b.set_halign(gtk::Align::Center);
-    b.append(w);
-    b
+/// 2×2 app-grid mark: rounded tiles, asymmetric fills, single red accent tile.
+/// An original mark — a nod to launcher grids, not a Windows clone.
+fn logo_mark() -> gtk::Grid {
+    use gtk::Grid;
+    let g = Grid::builder().row_spacing(3).column_spacing(3).margin_start(4).margin_end(6).build();
+    let mk = |cells: &[(&str, i32, i32)]| {
+        for (c, col, row) in cells {
+            let t = gtk::Box::builder()
+                .width_request(9)
+                .height_request(9)
+                .css_classes(cls(&["logo-tile", c]))
+                .build();
+            g.attach(&t, *col, *row, 1, 1);
+        }
+    };
+    // Arrangement: solid / accent / outlined / dim.
+    mk(&[("t1", 0, 0), ("t2", 1, 0), ("t3", 0, 1), ("t4", 1, 1)]);
+    g
 }

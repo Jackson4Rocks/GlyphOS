@@ -65,12 +65,15 @@ pub fn mono_label(text: &str) -> Label {
         .build()
 }
 
-/// Interface-label (takes one or more CSS class names).
+/// Interface-text label (takes one or more CSS class names). Text aligns
+/// left — the natural reading start — unlike GTK's centered default.
 pub fn ui_label(text: &str, classes: &str) -> Label {
     let class_list: Vec<&str> = classes.split(' ').collect();
     Label::builder()
         .label(text)
         .css_classes(cls(&class_list))
+        .halign(gtk::Align::Start)
+        .xalign(0.0)
         .build()
 }
 

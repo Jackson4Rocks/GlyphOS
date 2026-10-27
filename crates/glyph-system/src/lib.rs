@@ -10,5 +10,6 @@ pub mod battery;
 pub mod bluetooth;
 pub mod brightness;
 pub mod events;
+pub mod media;
 pub mod network;
 pub mod pulse;

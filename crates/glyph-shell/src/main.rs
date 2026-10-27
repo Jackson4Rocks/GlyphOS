@@ -60,12 +60,14 @@ fn main() {
             eprintln!("glyph-shell: notification daemon failed to spawn: {e}");
         }
 
-        // Build every shell surface.
+        // Build every shell surface, desktop first (it sits below the rest).
+        ui::desktop::build(&st, app);
         ui::panel::build(&st, app);
         ui::dock::build(&st, app);
         ui::command::build(&st, app);
         ui::control::build(&st, app);
         ui::notify::build(&st, app);
+        ui::quick::build(&st, app);
 
         // Background pollers: real system + compositor state (never on UI thread).
         glyph_system::events::start_polling();

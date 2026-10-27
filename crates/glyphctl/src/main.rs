@@ -39,6 +39,7 @@ fn main() {
             Request::Workspace { index: n }
         }
         "reload-theme" | "theme" => Request::ReloadTheme,
+        "quick" => Request::Quick,
         "ping" => Request::Ping,
         "help" | "--help" | "-h" => { usage(); return }
         other => {

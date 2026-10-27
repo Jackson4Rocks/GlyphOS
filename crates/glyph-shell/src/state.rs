@@ -12,6 +12,7 @@ pub enum Overlay {
     Command,
     Control,
     Notify,
+    Quick,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

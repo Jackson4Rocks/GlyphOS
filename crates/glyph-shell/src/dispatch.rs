@@ -6,32 +6,32 @@
 use crate::state::{Overlay, ShellSignal, ShellState, ZAction};
 use gtk::prelude::*;
 use gtk::Window;
-use std::rc::Rc;
 use std::sync::Arc;
 
 /// Main-thread-only overlay registry; UI builders insert windows here.
 thread_local! {
-    static REG: std::collections::HashMap<&'static str, Window> =
-        std::collections::HashMap::new();
+    static REG: std::cell::RefCell<std::collections::HashMap<&'static str, Window>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
 pub fn register(key: &'static str, win: Window) {
-    REG.with(|map| {
-        // RefCell-style interior write via trait methods is not possible on a
-        // plain HashMap, so we re-enter through Cell-based replace helper.
-        REG_MAP.with(|m| m.borrow_mut().insert(key, win));
-    });
-}
-
-thread_local! {
-    static REG_MAP: std::cell::RefCell<std::collections::HashMap<&'static str, Window>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
+    REG.with(|m| m.borrow_mut().insert(key, win));
 }
 
 /// Get a clone of the registered window handle (used by the notification
 /// surface to re-present itself when a daemon event arrives).
 pub fn lookup(key: &str) -> Option<Window> {
-    REG_MAP.with(|m| m.borrow().get(key).cloned())
+    REG.with(|m| m.borrow().get(key).cloned())
+}
+
+/// Hide every registered overlay surface. Used by desktop click and, later,
+/// by global shortcuts that want "popovers out of the way".
+pub fn hide_overlays() {
+    REG.with(|m| {
+        for w in m.borrow().values() {
+            if w.is_visible() { w.hide(); }
+        }
+    });
 }
 
 /// Central signal handler, always executed on the GTK main thread.
@@ -42,6 +42,15 @@ pub fn handle(st: &Arc<ShellState>, sig: ShellSignal) {
                 Overlay::Command => "command",
                 Overlay::Control => "control",
                 Overlay::Notify => "notify",
+                Overlay::Quick => {
+                    // Handled inline: opening always refreshes the flyout so
+                    // its clock/media/notification data is never stale.
+                    if let Some(w) = lookup("quick") {
+                        if w.is_visible() { w.hide(); } else { w.present(); crate::ui::quick::refresh(); }
+                        return;
+                    }
+                    ""
+                }
             };
             if let Some(w) = lookup(key) {
                 let show = |w: &Window| w.present();
@@ -71,10 +80,7 @@ pub fn handle(st: &Arc<ShellState>, sig: ShellSignal) {
             st.notif_close_tx.send((id, reason)).ok();
         }
     }
-    let _ = hdr_marker::<Rc<()>>();
 }
-
-fn hdr_marker<T>() {}
 
 /// Launch an application via desktop shell semantics (Field Codes honored).
 pub fn launch(exec: &str) {
