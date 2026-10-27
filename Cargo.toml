@@ -26,7 +26,13 @@ gdk = { package = "gdk4", version = "0.11" }
 gtk4-layer-shell = "0.8"
 zbus = { version = "5", default-features = false, features = ["blocking-api", "blocking", "async-io"] }
 ### glyphwm phase 3 target — left optional; enable with `--features run`
-# smithay = { version = "0.6", default-features = false, features = ["backend_libinput", "backend_udev", "renderer_gles2"] }
+# Smithay is the compositor foundation (phase 3). Features here are for the
+# nested development backend; udev/libinput arrive with the real session.
+smithay = { version = "0.6", default-features = false, features = [
+    "backend_winit",
+    "renderer_gles2",
+    "wayland_frontend",
+] }
 
 [profile.release]
 lto = "thin"
