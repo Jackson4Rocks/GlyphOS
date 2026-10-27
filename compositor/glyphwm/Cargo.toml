@@ -9,9 +9,11 @@ description = "GlyphOS custom Wayland compositor (Smithay-based) — phase 3 tar
 
 [features]
 default = []
-run = []
+run = ["dep:smithay"]
 
-# Smithay arrives in phase 3 alongside its backend bring-up; it is wired into
-# workspace.dependencies (currently commented) to keep day-to-day builds fast.
+# Smithay remains optional so geometry tests do not require a compositor runtime.
 [dependencies]
 glyph-core = { path = "../../crates/glyph-core" }
+# Nested development backend first: iterate inside an existing session, then
+# swap winit for the udev/libinput seat once the core window logic is real.
+smithay = { workspace = true, optional = true }

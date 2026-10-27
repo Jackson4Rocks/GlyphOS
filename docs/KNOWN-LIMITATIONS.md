@@ -1,8 +1,10 @@
 # Known limitations (honest list)
 
-1. **glyphwm does not exist yet.** The desktop currently runs on the
-   documented development-fallback compositor backend (Hyprland). Window
-   tiling/snapping behavior is therefore the fallback's, not GlyphOS's.
+1. **glyphwm has no Wayland runtime yet.** Compositor-independent workspace
+   state and floating/columns/rows/master-stack geometry are implemented and
+   unit-tested, but are not connected to Smithay surfaces. The desktop
+   currently runs on the documented development fallback (Hyprland), so
+   actual window tiling/snapping is provided by that compositor.
 2. **Notification daemon gaps (daemon is real, features are partial):**
    capabilities advertise `body` only — no action buttons, no sounds, no
    `ActionInvoked` emissions, no body markup. The internal 6 s banner timeout

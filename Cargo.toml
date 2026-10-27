@@ -30,8 +30,9 @@ zbus = { version = "5", default-features = false, features = ["blocking-api", "b
 # nested development backend; udev/libinput arrive with the real session.
 smithay = { version = "0.6", default-features = false, features = [
     "backend_winit",
-    "renderer_gles2",
+    "renderer_gl",
     "wayland_frontend",
+    "desktop",
 ] }
 
 [profile.release]
