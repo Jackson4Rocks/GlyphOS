@@ -42,6 +42,7 @@ Phases map 1:1 to the product plan; statuses updated only when verified.
 - [x] Notification history view (quick flyout shows the live store; clear-all
       echoes real close notifications)
 - [ ] notification actions/sounds (close reason 1 expiry not emitted)
+- [x] OSD for XF86 volume/brightness keys (real adapter change, glass bubble)
 - [ ] screenshot UI (grim plumbing exists in tests)
 - [ ] greetd greeter (layer-shell root; reuses tokens)
 
