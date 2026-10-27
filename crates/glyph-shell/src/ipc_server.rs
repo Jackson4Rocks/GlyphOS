@@ -65,6 +65,16 @@ fn handle_one(req: ipc::Request, tx: &SignalTx) -> String {
         ipc::Request::Workspace { index } => { tx.send(ShellSignal::Workspace(index)).ok(); ipc::send_ok() }
         ipc::Request::ReloadTheme => { tx.send(ShellSignal::ReloadTheme).ok(); ipc::send_ok() }
         ipc::Request::Quick => { tx.send(ShellSignal::Window(Overlay::Quick, ZAction::Toggle)).ok(); ipc::send_ok() }
+        ipc::Request::Osd { kind, dir } => {
+            let osd_kind = match kind.as_str() {
+                "volume" => crate::state::OsdKind::Volume,
+                "brightness" => crate::state::OsdKind::Brightness,
+                other => return ipc::send_err(&format!("unknown osd kind: {other}")),
+            };
+            // Real change happens on a thread; the bubble shows once it lands.
+            crate::ui::osd::adjust(osd_kind, dir, tx.clone());
+            ipc::send_ok()
+        }
         ipc::Request::Notify { summary, body } => {
             tx.send(ShellSignal::Notification(crate::state::Notif {
                 id: crate::state::next_local_notif_id(),

@@ -3,7 +3,6 @@
 use glyph_core::{Config, Paths};
 use std::collections::VecDeque;
 use glyph_system::events::SystemSnapshot;
-use gtk::glib;
 use std::sync::Arc;
 
 /// Which overlay a signal refers to.
@@ -29,10 +28,19 @@ pub enum ShellSignal {
     Launch(String),
     ReloadTheme,
     Workspace(u32),
+    /// A volume/brightness adjust finished and the OSD should reflect `level`.
+    Osd(OsdKind, i32, bool),
     /// Real D-Bus notification (phase 5 daemon).
     Notification(Notif),
     /// Peer closed a notification (reason 1=user, 2=daemon).
     NotificationClosed(u32, u32),
+}
+
+/// Which indicator the on-screen display mirrors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OsdKind {
+    Volume,
+    Brightness,
 }
 
 /// One notification as delivered over `org.freedesktop.Notifications`.

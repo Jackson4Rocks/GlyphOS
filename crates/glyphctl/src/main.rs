@@ -11,6 +11,8 @@ fn usage() {
     eprintln!("  notif-send SUMMARY [BODY]  local notification through the shell");
     eprintln!("  launch <exec>      launch an application");
     eprintln!("  workspace <1|2|3>  switch workspace");
+    eprintln!("  quick              toggle the clock flyout");
+    eprintln!("  osd <volume|brightness> <up|down|delta>  real change + OSD");
     eprintln!("  reload-theme       apply current glyphos.toml theme");
     eprintln!("  ping               check the running shell");
 }
@@ -40,6 +42,15 @@ fn main() {
         }
         "reload-theme" | "theme" => Request::ReloadTheme,
         "quick" => Request::Quick,
+        "osd" => {
+            let kind = args.get(1).cloned().unwrap_or_else(|| { eprintln!("osd <volume|brightness> <up|down|delta>"); exit(2) });
+            let dir = match args.get(2).map(|s| s.as_str()).unwrap_or("up") {
+                "up" | "+" => 5,
+                "down" | "-" => -5,
+                p => p.parse::<i32>().unwrap_or(5),
+            };
+            Request::Osd { kind, dir }
+        }
         "ping" => Request::Ping,
         "help" | "--help" | "-h" => { usage(); return }
         other => {

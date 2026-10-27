@@ -4,6 +4,7 @@ pub mod command;
 pub mod desktop;
 pub mod dock;
 pub mod notify;
+pub mod osd;
 pub mod panel;
 pub mod panel_parts;
 pub mod quick;

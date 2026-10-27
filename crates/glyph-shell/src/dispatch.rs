@@ -74,6 +74,7 @@ pub fn handle(st: &Arc<ShellState>, sig: ShellSignal) {
             reload_theme(&cfg);
         }
         ShellSignal::Workspace(i) => crate::compositor::switch_workspace(i),
+        ShellSignal::Osd(kind, level, muted) => crate::ui::osd::show(kind, level, muted),
         ShellSignal::Notification(n) => crate::ui::notify::on_notification(st, &n),
         ShellSignal::NotificationClosed(id, reason) => {
             crate::ui::notify::on_closed(st, id);

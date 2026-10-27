@@ -26,6 +26,8 @@ pub enum Request {
     ReloadTheme,
     /// Local test/dev notification through the shell's own path.
     Notify { summary: String, body: String },
+    /// Volume/brightness OSD step (real adapter change + bubble).
+    Osd { kind: String, dir: i32 },
     /// Toggle the clock flyout (calendar/media/notifications).
     Quick,
     /// Report basic runtime info.

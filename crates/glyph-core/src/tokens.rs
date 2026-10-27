@@ -432,6 +432,13 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 .desktop {{ background-color: {bg_root}; }}
 .desktop-mark {{ padding: 44px 72px; border-radius: 24px; }}
 
+/* ——— OSD bubble (volume / brightness, shown above the dock) ——— */
+.osd {{
+    padding: 10px 22px;
+    border-radius: 999px;
+    animation: slide-up var(--anim) cubic-bezier(0.2,0.9,0.3,1);
+}}
+
 /* ——— panel / dock geometry ——— */
 .panel {{ padding: 6px 12px; }}
 .workspace-pill {{

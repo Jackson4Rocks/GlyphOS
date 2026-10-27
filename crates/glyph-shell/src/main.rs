@@ -63,6 +63,7 @@ fn main() {
         // Build every shell surface, desktop first (it sits below the rest).
         ui::desktop::build(&st, app);
         ui::panel::build(&st, app);
+        ui::osd::build(&st, app);
         ui::dock::build(&st, app);
         ui::command::build(&st, app);
         ui::control::build(&st, app);
