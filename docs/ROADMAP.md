@@ -11,10 +11,14 @@ Phases map 1:1 to the product plan; statuses updated only when verified.
 - [x] dev scripts + gtk4-layer-shell bootstrap
 
 ## Phase 2 — Working session (running on the dev compositor fallback)
-- [x] Shell surfaces on wlr-layer-shell: panel, dock, command, control, notify
+- [x] Shell surfaces on wlr-layer-shell: desktop (wallpaper layer), panel,
+      dock, command, control, notify, quick flyout
+- [x] GlyphOS owns the desktop image (config `wallpaper`, honest fallback art)
 - [x] Real workspace indicators + switching via compositor adapter
 - [x] Glyph Command: desktop-entry search + window switch (compositor cache)
 - [x] Control Center: real Wi-Fi/Bluetooth/volume/brightness/mode switching
+- [x] Panel: app-grid launcher mark, centered Doto clock → quick flyout
+      (calendar / media transport / notification history), stat cluster
 - [x] glyphctl reachable from keybinds (`dist/hyprland/` example conf)
 - [ ] Settings surface replaces Control Center "big" page (phase 6 app)
 
@@ -26,15 +30,18 @@ Phases map 1:1 to the product plan; statuses updated only when verified.
 
 ## Phase 4 — Glass engine & identity polish
 - [x] tokens + material struct + fallback levels (done, live-tested)
-- [ ] wallpaper system (glyphwm surface + per-workspace option)
-- [ ] motion/animation polish, focus transitions
+- [x] Wallpaper: shell bottom layer serves the configured image; glyphwm
+      per-workspace wallpapers remain a phase-3 follow-up
+- [x] motion: token-driven hover/press transitions + flyout drop-in animation
 - [ ] light theme photography pass (tokens exist; visual QA pending)
 
 ## Phase 5 — System interfaces
 - [x] D-Bus notification daemon (real `org.freedesktop.Notifications` on the
       session bus; verified with `notify-send` + `busctl` close loop)
 - [x] lock screen placeholder (marked "phase 5" in UI; honest)
-- [ ] notification history view + actions/sounds (daemon holds the store)
+- [x] Notification history view (quick flyout shows the live store; clear-all
+      echoes real close notifications)
+- [ ] notification actions/sounds (close reason 1 expiry not emitted)
 - [ ] screenshot UI (grim plumbing exists in tests)
 - [ ] greetd greeter (layer-shell root; reuses tokens)
 

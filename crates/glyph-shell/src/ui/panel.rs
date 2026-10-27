@@ -1,6 +1,6 @@
-//! The GlyphOS top panel: wordmark, workspace indicators (real), centered
-//! display-face clock (opens Control Center), honest system stats on the
-//! right pulled from glyph-system caches. This IS the top bar of the OS.
+//! GlyphOS panel — the OS top bar. Left: app-grid mark (opens the launcher)
+//! and real workspace pills. Center: Doto clock, opens the quick flyout.
+//! Right: honest system stats from glyph-system caches (each opens Control).
 
 use crate::state::ShellState;
 use crate::ui::widget_helpers::*;
@@ -30,7 +30,7 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
 
     // ——— left: app-grid mark + real workspace indicators ———
     let left = Box::builder().orientation(Orientation::Horizontal).spacing(10).build();
-    left.append(&logo_mark());
+    left.append(&logo_button(st));
     left.append(&vsep());
     let row = Box::builder().orientation(Orientation::Horizontal).spacing(6).build();
     left.append(&row);
@@ -77,22 +77,43 @@ pub fn build(st: &Arc<ShellState>, app: &gtk::Application) {
     win.present();
 }
 
-/// 2×2 app-grid mark: rounded tiles, asymmetric fills, single red accent tile.
-/// An original mark — a nod to launcher grids, not a Windows clone.
-fn logo_mark() -> gtk::Grid {
+/// 2×2 app-grid mark on a button: rounded tiles, asymmetric fills, a single
+/// red accent tile. Clicking it opens the app launcher — an original mark, a
+/// nod to launcher grids, not a Windows clone.
+fn logo_button(st: &Arc<ShellState>) -> gtk::Button {
     use gtk::Grid;
-    let g = Grid::builder().row_spacing(3).column_spacing(3).margin_start(4).margin_end(6).build();
-    let mk = |cells: &[(&str, i32, i32)]| {
-        for (c, col, row) in cells {
-            let t = gtk::Box::builder()
+
+    let g = Grid::builder().row_spacing(3).column_spacing(3).build();
+    let tile = |class: &str, col: i32, row: i32| {
+        g.attach(
+            &gtk::Box::builder()
                 .width_request(9)
                 .height_request(9)
-                .css_classes(cls(&["logo-tile", c]))
-                .build();
-            g.attach(&t, *col, *row, 1, 1);
-        }
+                .css_classes(cls(&["logo-tile", class]))
+                .build(),
+            col,
+            row,
+            1,
+            1,
+        );
     };
     // Arrangement: solid / accent / outlined / dim.
-    mk(&[("t1", 0, 0), ("t2", 1, 0), ("t3", 0, 1), ("t4", 1, 1)]);
-    g
+    tile("t1", 0, 0);
+    tile("t2", 1, 0);
+    tile("t3", 0, 1);
+    tile("t4", 1, 1);
+
+    let btn = Button::builder()
+        .css_classes(cls(&["logo-btn"]))
+        .tooltip_text("Apps — Glyph Command")
+        .build();
+    btn.set_child(Some(&g));
+    let tx = st.tx.clone();
+    btn.connect_clicked(move |_| {
+        tx.send(crate::state::ShellSignal::Window(
+            crate::state::Overlay::Command,
+            crate::state::ZAction::Toggle,
+        )).ok();
+    });
+    btn
 }

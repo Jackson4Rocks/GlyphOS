@@ -411,6 +411,9 @@ pub fn stylesheet(tokens: &Tokens) -> String {
 .ndot-clock {{ font-size: 96px; }}
 
 /* ——— app-grid mark (2×2 tiles, one accent tile) ——— */
+.logo-btn {{ background-color: transparent; border: none; padding: 4px 6px; min-height: 0; }}
+.logo-btn:focus, .logo-btn:hover {{ outline: none; }}
+.logo-btn:hover {{ background-color: rgba(255,255,255,0.05); }}
 .logo-tile {{ min-width: 9px; min-height: 9px; border-radius: 3px; margin: 1px; }}
 .logo-tile.t1 {{ background-color: rgba(255,255,255,0.92); }}
 .logo-tile.t2 {{ background-color: {red}; }}
