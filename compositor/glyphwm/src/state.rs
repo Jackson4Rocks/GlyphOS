@@ -113,6 +113,118 @@ impl Workspace {
     }
 }
 
+/// Workspace coordinator for compositor policy. A future Smithay runtime will
+/// translate surface map/focus/unmap events into these operations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WindowManager {
+    workspaces: Vec<Workspace>,
+    active_workspace: u32,
+}
+
+impl Default for WindowManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl WindowManager {
+    /// Create the conventional nine numbered workspaces with workspace 1 active.
+    pub fn new() -> Self {
+        Self {
+            workspaces: (1..=9).map(Workspace::new).collect(),
+            active_workspace: 1,
+        }
+    }
+
+    pub fn active_workspace(&self) -> u32 {
+        self.active_workspace
+    }
+
+    pub fn workspace_ids(&self) -> impl Iterator<Item = u32> + '_ {
+        self.workspaces.iter().map(|workspace| workspace.id)
+    }
+
+    pub fn workspace(&self, id: u32) -> Option<&Workspace> {
+        self.workspaces.iter().find(|workspace| workspace.id == id)
+    }
+
+    pub fn active(&self) -> &Workspace {
+        self.workspace(self.active_workspace)
+            .expect("active workspace is always present")
+    }
+
+    pub fn active_mut(&mut self) -> &mut Workspace {
+        self.workspaces
+            .iter_mut()
+            .find(|workspace| workspace.id == self.active_workspace)
+            .expect("active workspace is always present")
+    }
+
+    /// Switch to a numbered workspace, creating it if needed. Workspace 0 is
+    /// invalid because the shell's workspace numbering is one-based.
+    pub fn switch_workspace(&mut self, id: u32) -> bool {
+        if id == 0 {
+            return false;
+        }
+        self.ensure_workspace(id);
+        self.active_workspace = id;
+        true
+    }
+
+    pub fn add_window(&mut self, window: Window) {
+        for workspace in &mut self.workspaces {
+            workspace.remove_window(window.id);
+        }
+        self.active_mut().add_window(window);
+    }
+
+    /// Move a window to another workspace without changing the active one.
+    pub fn move_window(&mut self, id: WindowId, target_workspace: u32) -> bool {
+        if target_workspace == 0 {
+            return false;
+        }
+        let Some(source) = self
+            .workspaces
+            .iter()
+            .position(|workspace| workspace.windows.iter().any(|window| window.id == id))
+        else {
+            return false;
+        };
+        if self.workspaces[source].id == target_workspace {
+            return true;
+        }
+
+        let window = self.workspaces[source]
+            .remove_window(id)
+            .expect("window was located in source workspace");
+        self.ensure_workspace(target_workspace);
+        let target = self
+            .workspaces
+            .iter_mut()
+            .find(|workspace| workspace.id == target_workspace)
+            .expect("target workspace was just created");
+        target.add_window(window);
+        true
+    }
+
+    pub fn move_focused(&mut self, target_workspace: u32) -> bool {
+        let Some(id) = self.active().focused() else {
+            return false;
+        };
+        self.move_window(id, target_workspace)
+    }
+
+    pub fn arrange_active(&self, area: Rect) -> Vec<(WindowId, Rect)> {
+        self.active().arrange(area)
+    }
+
+    fn ensure_workspace(&mut self, id: u32) {
+        if self.workspace(id).is_none() {
+            self.workspaces.push(Workspace::new(id));
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum Axis {
     Horizontal,
@@ -323,5 +435,65 @@ mod tests {
         assert!(tiles
             .iter()
             .all(|(_, rect)| rect.width == 0 && rect.height == 0));
+    }
+
+    #[test]
+    fn workspace_switching_preserves_independent_window_state() {
+        let mut manager = WindowManager::new();
+        manager.add_window(window(1, false));
+        assert!(manager.switch_workspace(3));
+        manager.add_window(window(2, true));
+
+        assert_eq!(manager.active_workspace(), 3);
+        assert_eq!(manager.active().focused(), Some(WindowId(2)));
+        assert_eq!(manager.workspace(1).unwrap().focused(), Some(WindowId(1)));
+        assert_eq!(
+            manager.workspace_ids().collect::<Vec<_>>(),
+            (1..=9).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            manager
+                .arrange_active(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 800,
+                    height: 600
+                })
+                .len(),
+            1
+        );
+        assert!(!manager.switch_workspace(0));
+    }
+
+    #[test]
+    fn moving_windows_keeps_active_workspace_and_updates_focus() {
+        let mut manager = WindowManager::new();
+        manager.add_window(window(1, false));
+        manager.add_window(window(2, true));
+
+        assert!(manager.move_focused(12));
+        assert_eq!(manager.active_workspace(), 1);
+        assert_eq!(manager.active().focused(), Some(WindowId(1)));
+        assert_eq!(manager.workspace(12).unwrap().focused(), Some(WindowId(2)));
+        assert!(manager
+            .workspace(1)
+            .unwrap()
+            .windows
+            .iter()
+            .all(|w| w.id != WindowId(2)));
+        assert!(!manager.move_window(WindowId(99), 2));
+        assert!(!manager.move_window(WindowId(1), 0));
+    }
+
+    #[test]
+    fn adding_an_existing_window_id_relocates_it_instead_of_duplicating() {
+        let mut manager = WindowManager::new();
+        manager.add_window(window(1, false));
+        manager.switch_workspace(2);
+        manager.add_window(window(1, true));
+
+        assert!(manager.workspace(1).unwrap().windows.is_empty());
+        assert_eq!(manager.active().windows.len(), 1);
+        assert!(manager.active().windows[0].floating);
     }
 }

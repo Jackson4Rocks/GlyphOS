@@ -24,8 +24,9 @@ Phases map 1:1 to the product plan; statuses updated only when verified.
 
 ## Phase 3 — Window management
 - [x] compositor-independent workspace/window state and deterministic
-      floating, columns, rows, and master/stack geometry policy (unit tested,
-      not yet connected to Smithay)
+      floating, columns, rows, master/stack layouts, workspace switching,
+      window transfer, and focus policy (unit tested, not yet connected to
+      Smithay)
 - [ ] tiling layouts and snapping live **in glyphwm**, not in the shell
 - [ ] glyphwm: floating + tiling, workspaces, monitor hotplug (Smithay)
 - [ ] window rules; keyboard-driven management parity with the plan
